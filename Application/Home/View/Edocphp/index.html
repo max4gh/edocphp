@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<HTML>
+<HEAD>
+	<TITLE> 代码调试</TITLE>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" href="__PUBLIC__/edocphp/ztree/css/demo.css" type="text/css">
+	<link rel="stylesheet" href="__PUBLIC__/edocphp/ztree/css/zTreeStyle/zTreeStyle.css" type="text/css">
+	<script type="text/javascript" src="__PUBLIC__/edocphp//ztree/js/jquery-1.4.4.min.js"></script>
+	<script type="text/javascript" src="__PUBLIC__/edocphp//ztree/js/jquery.ztree.core-3.5.js"></script>
+	<style type="text/css">
+		div.content_wrap {
+		    width: 80%; 
+		    height: 380px;
+		}
+		div.content_wrap div.left{float: left;width: 400px;}
+	</style>
+	<SCRIPT type="text/javascript">
+		
+		var setting = {
+				callback: {
+					onClick: onClick
+				}
+			};
+
+		function onClick(event, treeId, treeNode, clickFlag) {
+			
+			if(treeNode.isParent == false){
+				var parentNode = treeNode.getParentNode(); 
+				var filePath = parentNode.filePath;
+				var name = treeNode.name;
+				var className = treeNode.class; 
+				var infoUrl = "{:U('Edocphp/debug')}"; 
+				 $.get(infoUrl,"name="+name+"&class="+className,function(res){
+					var info = '<li class="title"><h2>类名：'+res.className+'</h2></li>';
+					info += '<li class="title"><h2>文件路径</h2></li>';
+					info += '<ul><li>'+filePath+' 第'+ res.startLine +'行</li></ul>';
+					info += '<li class="title"><h2>方法：'+res.method+'</h2></li>';
+					info += '<li class="title"><h2>方法描述</h2></li>';
+					info += '<ul><li>'+res.comment+'</li></ul>';
+					
+					info += '<li class="title"><h2>参数列表</h2></li>';
+					info += '<form  method="post" id="debugForm">';
+					info += '<ul><li><table cellspacing="1px" style=" width:100%; border-spacing: 2px; vertical-align: baseline;padding: 5px 15px 5px 6px;background-color: #d5d5d5;border: 1px solid #aaa;">';
+					var parameters = res.parameters;
+					if(parameters.length >0){
+						for (i in parameters){
+							info += '<tr><td>'+parameters[i].name+'['+parameters[i].type+']</td><td><input type="text" name="parameters['+parameters[i].name+']"></td><td>'+parameters[i].desc+'</td></tr>'
+						}
+					}
+					info += '<input type="hidden" name="debug" value="1">';
+					info += '<input type="hidden" name="class" value="'+className+'">';
+					info += '<input type="hidden" name="name" value="'+name+'">';
+					info += '<tr><td colspan="2" style="text-align:center"><input type="button" id="debugBtn" value="调试"></td></tr>';
+					info += '</table></li></ul>';
+					info += '</form>';
+					$('#info').html(info);
+					
+					var code = '<li class="title"><h2>代码</h2></li>';
+					code += '<ul><li>'+res.code+'</li></ul>';
+					$('#code').html(code);
+				}); 
+			}else{
+				//console.log(treeNode);
+			}
+			
+		}	
+		var zNodes = {$data};
+		$(document).ready(function(){
+			$.fn.zTree.init($("#treeDemo"), setting, zNodes);
+			$('#debugBtn').live('click',function(){
+				var data = $("#debugForm").serialize();
+				var debugUrl = "{:U('Edocphp/debug')}";
+				$.get(debugUrl,data,function(res){
+					$('#data').html(res.data);
+					$('#bf').html(res.bf);
+					if(!res.data && !res.bf){
+						$('#data').html(res);
+					}
+				},'json');
+			});
+			
+			$("#module").change(function(){
+				var module = $(this).val();
+				var url = '{:U("Edocphp/classList")}';
+				location.href = "__URL__" + "/Index/module/"+module;
+			});
+			
+		});
+		
+		
+		
+	</SCRIPT>
+</HEAD>
+
+<BODY>
+<h1>代码调试</h1>
+<h6>[ {$module} ]</h6>
+<div class="content_wrap">
+	<div class="zTreeDemoBackground left">
+		<span>选择分层
+		<select name="module" id="module">
+			<option value="Service" <if condition="$module eq 'Service' "> selected</if> >Sevice</option>
+			<option value="Model" <if condition="$module eq 'Model' "> selected</if> >Model</option>
+			<option value="Controller" <if condition="$module eq 'Controller' "> selected</if>>Controller</option>
+		</select>
+		</span>
+		<ul id="treeDemo" class="ztree"></ul>
+	</div>
+	
+	<div class="left">
+		<ul class="info" id="info">
+			<li class="title"><h2>代码调试说明(V1.0)</h2>
+				<ul class="list">
+				<li class="highlight_red">左边是类方法列表</li>
+				<li>右边显示方法相关信息</li>
+				<li>右下是调试结果</li>
+				</ul>
+			</li>
+			
+		</ul>
+		<ul class="info" >
+			<li class="title"><h2>调试结果</h2>
+				<ul class="list">
+				<li class="highlight_red">
+					<div><pre >返回结果：<br/><code id="data"></code></pre></div>
+					<div><pre >缓冲区输出：<br/><code id="bf"></code></pre></div>
+				</li>
+				</ul>
+			</li>
+			
+		</ul>
+	</div>
+	
+	<div class="right">
+		<ul class="info" id="code"></ul>
+	</div>
+	
+</div>
+</BODY>
+</HTML>
+
