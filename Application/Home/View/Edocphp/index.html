@@ -29,42 +29,77 @@
 				var filePath = parentNode.filePath;
 				var name = treeNode.name;
 				var className = treeNode.class; 
-				var infoUrl = "{:U('Edocphp/debug')}"; 
-				 $.get(infoUrl,"name="+name+"&class="+className,function(res){
-					var info = '<li class="title"><h2>类名：'+res.className+'</h2></li>';
-					info += '<li class="title"><h2>文件路径</h2></li>';
-					info += '<ul><li>'+filePath+' 第'+ res.startLine +'行</li></ul>';
-					info += '<li class="title"><h2>方法：'+res.method+'</h2></li>';
-					info += '<li class="title"><h2>方法描述</h2></li>';
-					info += '<ul><li>'+res.comment+'</li></ul>';
-					
-					info += '<li class="title"><h2>参数列表</h2></li>';
-					info += '<form  method="post" id="debugForm">';
-					info += '<ul><li><table cellspacing="1px" style=" width:100%; border-spacing: 2px; vertical-align: baseline;padding: 5px 15px 5px 6px;background-color: #d5d5d5;border: 1px solid #aaa;">';
-					var parameters = res.parameters;
-					if(parameters.length >0){
-						for (i in parameters){
-							info += '<tr><td>'+parameters[i].name+'['+parameters[i].type+']</td><td><input type="text" name="parameters['+parameters[i].name+']"></td><td>'+parameters[i].desc+'</td></tr>'
-						}
-					}
-					info += '<input type="hidden" name="debug" value="1">';
-					info += '<input type="hidden" name="class" value="'+className+'">';
-					info += '<input type="hidden" name="name" value="'+name+'">';
-					info += '<tr><td colspan="3" style="text-align:center"><input type="button" id="debugBtn" value="调试"></td></tr>';
-					info += '</table></li></ul>';
-					info += '</form>';
-					$('#info').html(info);
-					
-					var code = '<li class="title"><h2>代码</h2></li>';
-					code += '<ul><li>'+res.code+'</li></ul>';
-					$('#code').html(code);
-				}); 
+				getMothodInfo(name,className,filePath);
+				return;
 			}else{
-				//console.log(treeNode);
+				if( typeof(treeNode.class)!== 'undefined' ){
+					var className = treeNode.class;
+					var filePath = treeNode.filePath;
+					var classInfoUrl = "{:U('Edocphp/getClassInfo')}";
+					$.get(classInfoUrl, "class="+className,function(res){
+						console.log(res);
+						var info = '<li class="title"><h2>类名：'+res.name+'</h2></li>';
+						info += '<li class="title"><h2>文件路径</h2></li>';
+						info += '<ul><li>'+filePath+'</li></ul>';
+						info += '<li class="title"><h2>类描述</h2></li>';
+						info += '<ul><li>'+res.comment+'</li></ul>';
+						
+						info += '<li class="title"><h2>方法列表</h2></li>';
+						var methods = res.methods;
+						if(methods.length >0){
+							info += '<ul>';
+							for (i in methods){
+								info += '<li><a href="#" onclick=getMothodInfo("'+methods[i].name+'","'+ className +'","'+ filePath +'")>'+methods[i].name+'</a></li>';
+							}
+							info += '</ul>';
+						}
+						
+						$('#info').html(info);
+						
+						var code = '<li class="title" id="showCode" style="cursor:pointer"><h2>显示代码</h2></li>';
+						code += '<div id="codeContent" style="display:none; height:100%; over-flow:scroll"><li>'+res.code+'</li></div>';
+						$('#code').html(code);
+					});
+				}
+				console.log(treeNode);
 			}
 			
 		}	
 		var zNodes = {$data};
+		
+		//获取方法详情
+		function getMothodInfo(methodName, className, filePath){
+			var infoUrl = "{:U('Edocphp/debug')}"; 
+			 $.get(infoUrl,"name="+methodName+"&class="+className,function(res){
+				var info = '<li class="title"><h2>类名：'+res.className+'</h2></li>';
+				info += '<li class="title"><h2>文件路径</h2></li>';
+				info += '<ul><li>'+filePath+' 第'+ res.startLine +'行</li></ul>';
+				info += '<li class="title"><h2>方法：'+res.method+'</h2></li>';
+				info += '<li class="title"><h2>方法描述</h2></li>';
+				info += '<ul><li>'+res.comment+'</li></ul>';
+				
+				info += '<li class="title"><h2>参数列表</h2></li>';
+				info += '<form  method="post" id="debugForm">';
+				info += '<ul><li><table cellspacing="1px" style=" width:100%; border-spacing: 2px; vertical-align: baseline;padding: 5px 15px 5px 6px;background-color: #d5d5d5;border: 1px solid #aaa;">';
+				var parameters = res.parameters;
+				if(parameters.length >0){
+					for (i in parameters){
+						info += '<tr><td>'+parameters[i].name+'['+parameters[i].type+']</td><td><input type="text" name="parameters['+parameters[i].name+']"></td><td>'+parameters[i].desc+'</td></tr>'
+					}
+				}
+				info += '<input type="hidden" name="debug" value="1">';
+				info += '<input type="hidden" name="class" value="'+className+'">';
+				info += '<input type="hidden" name="name" value="'+methodName+'">';
+				info += '<tr><td colspan="3" style="text-align:center"><input type="button" id="debugBtn" value="调试"></td></tr>';
+				info += '</table></li></ul>';
+				info += '</form>';
+				$('#info').html(info);
+				
+				var code = '<li class="title"><h2>代码</h2></li>';
+				code += '<ul><li>'+res.code+'</li></ul>';
+				$('#code').html(code);
+			}); 
+		}
 		$(document).ready(function(){
 			$.fn.zTree.init($("#treeDemo"), setting, zNodes);
 			$('#debugBtn').live('click',function(){
@@ -77,6 +112,14 @@
 						$('#data').html(res);
 					}
 				},'json');
+			});
+			$('#showCode').live('click',function(){
+				$("#codeContent").toggle();
+				if($("#codeContent").css('display')=="none"){
+					$(this).html("<h2>显示代码</h2>");
+				}else{
+					$(this).html("<h2>隐藏代码</h2>");
+				}
 			});
 			
 			$("#module").change(function(){
@@ -110,9 +153,10 @@
 		<ul class="info" id="info">
 			<li class="title"><h2>代码调试说明(V1.0)</h2>
 				<ul class="list">
-				<li class="highlight_red">左边是类方法列表</li>
-				<li>右边显示方法相关信息</li>
-				<li>右下是调试结果</li>
+				<li class="highlight_red">左边是类方法列表，点击类名右边会显示对应的代码</li>
+				<li>中间显示方法相关信息</li>
+				<li>中下是调试结果</li>
+				<li>右边显示类文件代码或方法代码</li>
 				</ul>
 			</li>
 			

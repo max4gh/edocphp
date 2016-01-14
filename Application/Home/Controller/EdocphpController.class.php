@@ -12,7 +12,11 @@ namespace Home\Controller;
 
 use Think\Controller;
 
-
+/**
+ * 
+ * @author Max
+ *
+ */
 class EdocphpController extends Controller {
 	
 	/**
@@ -177,11 +181,32 @@ class EdocphpController extends Controller {
 				$this->ajaxReturn (['bf'=>$bf, 'data'=>var_export ( $res, true )],'json');
 			}
 			
-		} catch ( Exception $e ) {
+		} catch ( \Exception $e ) {
 			echo $e->getMessage ();
 		}
 		$this->ajaxReturn ( $data );
 	}
+	
+	/**
+	 * 反射类描述
+	 * @param string $class 类名，base64_encode
+	 */
+	public function getClassInfo($class){
+		try {
+			$reflector = new \ReflectionClass ( base64_decode ( $class ) );
+			$document = nl2br($reflector->getDocComment ( ));
+			$methods = $this->methodList($class);
+			$file = dirname(dirname ( dirname ( __FILE__ ) )).DIRECTORY_SEPARATOR.base64_decode ( $class ).".class.php";
+			$file = str_replace('\\',DIRECTORY_SEPARATOR,$file);
+			$content = file($file );
+			$data = ['comment'=>$document, 'methods'=>$methods,'name'=>base64_decode ( $class ), 'code'=>highlight_file($file,true) ];
+		} catch ( \ReflectionException $e ) {
+			dump ( $e->getMessage () );
+		}
+		return $this->ajaxReturn($data);
+	}
+	
+	
 	
 	/**
 	 * @param int $a 参数b的描述
