@@ -11,7 +11,7 @@ namespace Home\Model;
 
 class TestModel {
 	/**
-	 * 以下是参数的说明 
+	 * 以下是参数的描述，参数的说明 
 	 * 
 	 * @param string $a a说明
 	 * @param int $b b说明

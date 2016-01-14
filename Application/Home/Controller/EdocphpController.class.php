@@ -40,7 +40,7 @@ class EdocphpController extends Controller {
 	 */
 	public function getClassList($type = "Service", $dir = '', $subGroup = '') {
 		if ($dir == '') {
-			$dir = dirname ( dirname ( __FILE__ ) ) . "/$type";
+			$dir = dirname ( dirname ( __FILE__ ) ) . DIRECTORY_SEPARATOR."$type";
 		}
 		
 		$d = dir ( $dir );
@@ -48,7 +48,7 @@ class EdocphpController extends Controller {
 		while ( false !== ($file = $d->read ()) ) {
 			if ($file != '.' && $file != '..') {
 				$temp = [ ];
-				if (is_file ( $dir . '/' . $file ) && strpos ( $file, '.php' )) {
+				if (is_file ( $dir . DIRECTORY_SEPARATOR . $file ) && strpos ( $file, '.php' )) {
 					list ( $className ) = explode ( '.', $file );
 					$temp ['name'] = $className;
 					if ($subGroup == '') {
@@ -57,16 +57,16 @@ class EdocphpController extends Controller {
 						$temp ['class'] = base64_encode ( MODULE_NAME . "\\" . $type . "\\" . $subGroup . "\\" . $className );
 					}
 					
-					$temp ['filePath'] = $dir . '/' . $file;
+					$temp ['filePath'] = $dir . DIRECTORY_SEPARATOR . $file;
 					$temp ['children'] = $this->methodList ( $temp ['class'] );
-				} else if (is_dir ( $dir . '/' . $file )) {
+				} else if (is_dir ( $dir . DIRECTORY_SEPARATOR . $file )) {
 					$temp ['name'] = $file;
 					if ($subGroup == '') {
 						$subGroup = $file;
 					} else {
-						$subGroup = $subGroup . "\\" . $file;
+						$subGroup = $subGroup . DIRECTORY_SEPARATOR . $file;
 					}
-					$temp ['children'] = $this->getClassList ( $type, $dir . '/' . $file, $subGroup );
+					$temp ['children'] = $this->getClassList ( $type, $dir . DIRECTORY_SEPARATOR . $file, $subGroup );
 					$subGroup = ''; // 清除条件
 				}
 				$files [] = $temp;
@@ -112,7 +112,9 @@ class EdocphpController extends Controller {
 		try {
 			// echo base64_decode($class);return;
 			$class = base64_decode ( $class );
-			$content = file(dirname(dirname ( dirname ( __FILE__ ) ))."/".$class.".class.php" );
+			$file = dirname(dirname ( dirname ( __FILE__ ) )).DIRECTORY_SEPARATOR.$class.".class.php";
+            $file = str_replace('\\',DIRECTORY_SEPARATOR,$file);
+            $content = file($file );
 			$method = new \ReflectionMethod ( $class, $name );
 			$data = [ ];
 			$data ['startLine'] = $method->getStartLine ();
